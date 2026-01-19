@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔒 Secure Telegram Files</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .security-badge {
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .file-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .file-card:hover {
+            border-color: var(--secondary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.15);
+        }
+        
+        .file-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        
+        .icon-document { background: #ffc10720; color: #ffc107; }
+        .icon-image { background: #17a2b820; color: #17a2b8; }
+        .icon-video { background: #dc354520; color: #dc3545; }
+        .icon-audio { background: #28a74520; color: #28a745; }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--secondary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .alert-custom {
+            border-left: 5px solid;
+            border-radius: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bold">
+                <i class="fas fa-shield-alt text-success"></i> Secure Telegram Files
+            </h1>
+            <p class="lead text-muted">Fetch files securely without exposing bot token</p>
+            <span class="security-badge">
+                <i class="fas fa-lock"></i> Token Protected
+            </span>
+        </div>
+        
+        <!-- API Status -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5><i class="fas fa-server"></i> Backend Status</h5>
+                        <div id="apiStatus" class="mt-2">
+                            <span class="badge bg-secondary">Checking...</span>
+                        </div>
+                        <small class="text-muted" id="apiUrl"></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5><i class="fas fa-robot"></i> Bot Status</h5>
+                        <div id="botStatus" class="mt-2">
+                            <span class="badge bg-secondary">Checking...</span>
+                        </div>
+                        <small class="text-muted">@StorageAjit_bot</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Channel Input -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5><i class="fas fa-hashtag"></i> Channel Settings</h5>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-8">
+                        <label class="form-label">Channel Username:</label>
+                        <div class="input-group">
+                            <span class="input-group-text">@</span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="channelInput"
+                                   placeholder="Enter channel username"
+                                   value="Anon27199">
+                        </div>
+                        <small class="text-muted">Bot must be admin in the channel</small>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-success w-100" onclick="loadFiles()" id="loadBtn">
+                            <i class="fas fa-search"></i> Load Files
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Security Info -->
+        <div class="alert alert-info alert-custom mb-4">
+            <h5><i class="fas fa-info-circle"></i> Security Features</h5>
+            <ul class="mb-0">
+                <li>Bot token stored securely in backend environment variables</li>
+                <li>No sensitive data exposed in frontend code</li>
+                <li>CORS restricted to prevent unauthorized access</li>
+                <li>Rate limiting to prevent abuse</li>
+            </ul>
+        </div>
+        
+        <!-- Loading -->
+        <div id="loadingSection" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <h4>Fetching files securely...</h4>
+            <p class="text-muted">This may take a moment</p>
+        </div>
+        
+        <!-- Error -->
+        <div id="errorAlert" class="alert alert-danger alert-custom" style="display: none;">
+            <h5><i class="fas fa-exclamation-triangle"></i> Error</h5>
+            <p id="errorText"></p>
+            <small id="errorHint" class="text-muted"></small>
+        </div>
+        
+        <!-- Files Container -->
+        <div id="filesContainer">
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-folder-open fa-4x mb-3"></i>
+                <h4>No files loaded yet</h4>
+                <p>Enter a channel username above to get started</p>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div id="statsSection" class="row mt-4" style="display: none;">
+            <div class="col-md-3 col-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h2 class="text-primary" id="totalFiles">0</h2>
+                        <small class="text-muted">Total Files</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h2 class="text-success" id="channelName">-</h2>
+                        <small class="text-muted">Channel</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>
+                <i class="fas fa-code"></i> Backend: <code id="backendUrl">https://your-backend.vercel.app</code> |
+                <i class="fas fa-shield-alt"></i> Secured with Environment Variables
+            </p>
+            <p>
+                <small>
+                    Made with ❤️ | Bot: @StorageAjit_bot | 
+                    <a href="javascript:void(0)" onclick="showApiInfo()" class="text-decoration-none">
+                        <i class="fas fa-question-circle"></i> API Info
+                    </a>
+                </small>
+            </p>
+        </div>
+    </div>
+    
+    <!-- API Info Modal -->
+    <div class="modal fade" id="apiModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-code"></i> API Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Backend URL:</h6>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="apiEndpoint" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copyApiUrl()">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    
+                    <h6>Endpoints:</h6>
+                    <pre class="bg-light p-3 rounded"><code>GET /api/status
+GET /api/files?channel=@username</code></pre>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Token is stored in backend environment variables, not in frontend code.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Main JavaScript -->
+    <script>
+        // ==================== CONFIGURATION ====================
+        // ✅ YAHAN APNA SECURE BACKEND URL DAALEN
+        // Vercel par deploy karo aur yahan uska URL daalo
+        const SECURE_API_URL = 'https://telegram-files-secure.vercel.app';
+        
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set backend URL in footer
+            document.getElementById('backendUrl').textContent = SECURE_API_URL;
+            document.getElementById('apiEndpoint').value = SECURE_API_URL;
+            
+            // Check API status
+            checkApiStatus();
+            
+            // Enter key support
+            document.getElementById('channelInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadFiles();
+                }
+            });
+            
+            // Auto-load after 2 seconds if channel is pre-filled
+            setTimeout(() => {
+                const channelInput = document.getElementById('channelInput');
+                if (channelInput.value && channelInput.value.trim() !== '') {
+                    if (!channelInput.value.startsWith('@')) {
+                        channelInput.value = '@' + channelInput.value;
+                    }
+                    loadFiles();
+                }
+            }, 2000);
+        });
+        
+        // ==================== API FUNCTIONS ====================
+        
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${SECURE_API_URL}/api/status`);
+                const data = await response.json();
+                
+                if (data.status === 'secure') {
+                    document.getElementById('apiStatus').innerHTML = 
+                        '<span class="badge bg-success">✅ Secure & Running</span>';
+                    document.getElementById('apiUrl').textContent = SECURE_API_URL;
+                    checkBotStatus();
+                } else {
+                    document.getElementById('apiStatus').innerHTML = 
+                        '<span class="badge bg-warning">⚠️ Limited</span>';
+                }
+            } catch (error) {
+                document.getElementById('apiStatus').innerHTML = 
+                    '<span class="badge bg-danger">❌ Offline</span>';
+                document.getElementById('apiUrl').textContent = 'Backend not reachable';
+            }
+        }
+        
+        async function checkBotStatus() {
+            try {
+                const response = await fetch(`${SECURE_API_URL}/api/files?channel=@Anon27199&limit=1`);
+                const data = await response.json();
+                
+                if (data.success || data.error) {
+                    document.getElementById('botStatus').innerHTML = 
+                        '<span class="badge bg-success">✅ Connected</span>';
+                } else {
+                    document.getElementById('botStatus').innerHTML = 
+                        '<span class="badge bg-danger">❌ Error</span>';
+                }
+            } catch (error) {
+                document.getElementById('botStatus').innerHTML = 
+                    '<span class="badge bg-warning">⚠️ Checking...</span>';
+            }
+        }
+        
+        // ==================== FILE FUNCTIONS ====================
+        
+        async function loadFiles() {
+            let channel = document.getElementById('channelInput').value.trim();
+            
+            // Validate and format channel name
+            if (!channel) {
+                showError('Please enter channel username', 'Example: @Anon27199');
+                return;
+            }
+            
+            if (!channel.startsWith('@')) {
+                channel = '@' + channel;
+                document.getElementById('channelInput').value = channel;
+            }
+            
+            // Show loading
+            showLoading();
+            
+            try {
+                console.log(`Fetching from: ${SECURE_API_URL}/api/files?channel=${encodeURIComponent(channel)}`);
+                
+                const response = await fetch(`${SECURE_API_URL}/api/files?channel=${encodeURIComponent(channel)}`);
+                const data = await response.json();
+                
+                console.log('API Response:', data);
+                
+                if (data.success) {
+                    // Update stats
+                    document.getElementById('totalFiles').textContent = data.total_files;
+                    document.getElementById('channelName').textContent = data.channel;
+                    document.getElementById('statsSection').style.display = 'flex';
+                    
+                    // Display files
+                    displayFiles(data.files);
+                    
+                    // Hide error if any
+                    hideError();
+                } else {
+                    showError(data.error || 'Failed to fetch files', 
+                             data.details || 'Please check channel permissions');
+                }
+                
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showError(
+                    'Network Error: ' + error.message, 
+                    'Please check: 1) Backend is running 2) Internet connection'
+                );
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function displayFiles(files) {
+            const container = document.getElementById('filesContainer');
+            
+            if (!files || files.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
+                        <h4>No Files Found</h4>
+                        <p>Try a different channel or ensure bot has admin access.</p>
+                        <button class="btn btn-primary mt-2" onclick="loadFiles()">
+                            <i class="fas fa-redo"></i> Try Again
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4><i class="fas fa-list"></i> Files Found</h4>
+                    <span class="badge bg-primary">${files.length} files</span>
+                </div>
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            `;
+            
+            files.forEach((file, index) => {
+                const iconClass = getIconClass(file.type);
+                const fileSize = formatFileSize(file.size);
+                const fileDate = formatDate(file.date);
+                const fileName = file.name || `File ${index + 1}`;
+                
+                html += `
+                    <div class="col">
+                        <div class="file-card h-100">
+                            <div class="file-icon ${iconClass}">
+                                <i class="fas ${getFileIcon(file.type)}"></i>
+                            </div>
+                            
+                            <h6 class="fw-bold mb-2" title="${fileName}">
+                                ${truncateText(fileName, 40)}
+                            </h6>
+                            
+                            <div class="small text-muted mb-3">
+                                <div class="mb-1">
+                                    <i class="fas fa-tag"></i> 
+                                    <span class="badge bg-secondary">${file.type}</span>
+                                </div>
+                                <div class="mb-1">
+                                    <i class="fas fa-hdd"></i> ${fileSize}
+                                </div>
+                                <div class="mb-1">
+                                    <i class="far fa-calendar"></i> ${fileDate}
+                                </div>
+                                ${file.caption ? `
+                                    <div class="mt-2">
+                                        <i class="far fa-comment"></i> 
+                                        ${truncateText(file.caption, 60)}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="mt-auto">
+                                <div class="d-grid gap-2">
+                                    <a href="${file.download_url}" 
+                                       class="btn btn-success btn-sm"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       download="${fileName}">
+                                        <i class="fas fa-download"></i> Download
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // ==================== HELPER FUNCTIONS ====================
+        
+        function getIconClass(fileType) {
+            switch(fileType) {
+                case 'image': return 'icon-image';
+                case 'video': return 'icon-video';
+                case 'audio': return 'icon-audio';
+                case 'document': return 'icon-document';
+                default: return 'icon-document';
+            }
+        }
+        
+        function getFileIcon(fileType) {
+            switch(fileType) {
+                case 'image': return 'fa-image';
+                case 'video': return 'fa-video';
+                case 'audio': return 'fa-music';
+                case 'document': return 'fa-file-pdf';
+                default: return 'fa-file';
+            }
+        }
+        
+        function formatFileSize(bytes) {
+            if (!bytes) return 'Unknown';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+        
+        function formatDate(dateString) {
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('hi-IN', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            } catch (e) {
+                return dateString;
+            }
+        }
+        
+        function truncateText(text, maxLength) {
+            if (!text) return '';
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+        
+        function showLoading() {
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('filesContainer').innerHTML = '';
+            document.getElementById('statsSection').style.display = 'none';
+            document.getElementById('loadBtn').disabled = true;
+            hideError();
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('loadBtn').disabled = false;
+        }
+        
+        function showError(message, hint = '') {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorHint').textContent = hint;
+            document.getElementById('errorAlert').style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('errorAlert').style.display = 'none';
+        }
+        
+        function showApiInfo() {
+            const modal = new bootstrap.Modal(document.getElementById('apiModal'));
+            modal.show();
+        }
+        
+        function copyApiUrl() {
+            navigator.clipboard.writeText(SECURE_API_URL).then(() => {
+                alert('API URL copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
